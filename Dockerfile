@@ -10,8 +10,9 @@ RUN apk add --no-cache nginx bash
 
 WORKDIR /app
 
-# Copy nginx config
-COPY web/nginx.conf /etc/nginx/conf.d/default.conf
+# Copy nginx configs
+COPY nginx-main.conf /etc/nginx/nginx.conf
+COPY web/nginx.conf /etc/nginx/conf.d/server.conf
 
 # Copy frontend files
 COPY --from=frontend-builder /build/dist /usr/share/nginx/html/
