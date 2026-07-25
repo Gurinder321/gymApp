@@ -1,30 +1,30 @@
 # Build frontend
-FROM node:20-alpine AS frontend-builder
-WORKDIR /app/frontend
-COPY frontend/package*.json ./
-RUN npm ci
+FROM node:22-alpine AS frontend-builder
+WORKDIR /app
+COPY frontend/package.json frontend/package-lock.json* ./
+RUN npm ci 2>/dev/null || npm install
 COPY frontend/ ./
 RUN npm run build
 
-# Build final image
-FROM node:20-alpine
+# Runtime: nginx + API
+FROM alpine:latest
+RUN apk add --no-cache nginx nodejs npm bash
+
 WORKDIR /app
 
-# Install API dependencies
-COPY api/package*.json ./api/
-RUN cd api && npm ci
+# Setup nginx
+COPY web/nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=frontend-builder /app/dist /usr/share/nginx/html
 
-# Copy built frontend
-COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
+# Setup API
+COPY api/package.json api/package-lock.json* ./
+RUN npm ci 2>/dev/null || npm install
+COPY api/server.js ./
 
-# Copy API code
-COPY api/ ./api/
+# Create data directory
+RUN mkdir -p /data
 
-# Copy web config (nginx config)
-COPY web/nginx.conf ./
+EXPOSE 80
 
-# Expose port
-EXPOSE 3000
-
-# Start API server
-CMD ["node", "api/server.js"]
+# Start both nginx and API server
+CMD sh -c "nginx -g 'daemon off;' & node server.js"
