@@ -2,7 +2,9 @@
 FROM node:22-alpine AS frontend-builder
 WORKDIR /build
 COPY frontend/ ./
-RUN npm install && npm run build && ls -la dist/
+RUN npm install
+RUN npm run build
+RUN echo "=== Build output ===" && ls -laR dist/ && echo "=== End build output ==="
 
 # Runtime: nginx + API
 FROM node:22-alpine
