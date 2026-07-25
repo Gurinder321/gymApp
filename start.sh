@@ -1,21 +1,13 @@
 #!/bin/sh
-set -e
 
-# Start nginx in background
-echo "Starting nginx..."
-nginx -g 'daemon off;' &
-NGINX_PID=$!
-
-# Wait a moment for nginx to start
-sleep 1
-
-# Start API server
-echo "Starting API server..."
-node /app/server.js &
+# Start API server in background
+echo "Starting API server on port 3000..."
+cd /app/api
+node server.js > /tmp/api.log 2>&1 &
 API_PID=$!
+echo "API PID: $API_PID"
+sleep 2
 
-# Handle shutdown
-trap "kill $NGINX_PID $API_PID" TERM INT
-
-# Wait for both processes
-wait
+# Start nginx in foreground
+echo "Starting nginx..."
+exec nginx -g 'daemon off;'

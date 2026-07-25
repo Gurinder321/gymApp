@@ -4,6 +4,7 @@
     "builder": "dockerfile"
   },
   "deploy": {
-    "port": 80
+    "port": 80,
+    "startCommand": "/start.sh"
   }
 }
