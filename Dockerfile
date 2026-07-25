@@ -4,8 +4,8 @@ WORKDIR /build/frontend
 COPY frontend/package*.json ./
 RUN npm ci --prefer-offline --no-audit 2>&1 || npm install
 COPY frontend/ ./
-RUN npm run build 2>&1
-RUN ls -la /build/frontend/dist || echo "ERROR: dist not found!"
+RUN npm run build -- --outDir dist --target esnext 2>&1 | tail -100
+RUN echo "==== Checking dist folder ====" && find /build/frontend/dist -type f 2>&1 || echo "ERROR: dist not found!"
 
 # Runtime: nginx + API
 FROM node:22-alpine
