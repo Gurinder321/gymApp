@@ -1,31 +1,33 @@
 # Build frontend
 FROM node:22-alpine AS frontend-builder
-WORKDIR /app/frontend
-COPY frontend/package.json frontend/package-lock.json* ./
-RUN npm ci 2>/dev/null || npm install
+WORKDIR /build
 COPY frontend/ ./
-RUN npm run build
+RUN npm install && npm run build && ls -la dist/
 
 # Runtime: nginx + API
-FROM alpine:latest
-RUN apk add --no-cache nginx nodejs npm bash
+FROM node:22-alpine
+RUN apk add --no-cache nginx bash
 
-# Setup nginx
-COPY web/nginx.conf /etc/nginx/conf.d/default.conf
-COPY --from=frontend-builder /app/frontend/dist /usr/share/nginx/html
-
-# Setup API
 WORKDIR /app
-COPY api/package.json api/package-lock.json* ./
-RUN npm ci 2>/dev/null || npm install
-COPY api/server.js ./
+
+# Copy nginx config
+COPY web/nginx.conf /etc/nginx/conf.d/default.conf
+
+# Copy frontend files
+COPY --from=frontend-builder /build/dist /usr/share/nginx/html/
+
+# Copy API code
+COPY api/ ./api/
+WORKDIR /app/api
+RUN npm install
+WORKDIR /app
+
+# Create data directory
+RUN mkdir -p /data
 
 # Startup script
 COPY start.sh /start.sh
 RUN chmod +x /start.sh
-
-# Create data directory
-RUN mkdir -p /data
 
 EXPOSE 80
 
