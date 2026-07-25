@@ -1,10 +1,12 @@
 # Build frontend
 FROM node:22-alpine AS frontend-builder
 WORKDIR /build
+COPY frontend/package*.json ./
+RUN npm ci --prefer-offline --no-audit 2>&1 || npm install
 COPY frontend/ ./
-RUN npm install
-RUN npm run build
-RUN echo "=== Build output ===" && ls -laR dist/ && echo "=== End build output ==="
+RUN npm run build 2>&1 || (echo "BUILD FAILED" && exit 1)
+RUN test -d dist || (echo "dist/ directory missing!" && exit 1)
+RUN echo "=== Build output ===" && find dist -type f | head -20 && echo "=== End build output ==="
 
 # Runtime: nginx + API
 FROM node:22-alpine
