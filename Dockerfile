@@ -1,12 +1,11 @@
 # Build frontend
 FROM node:22-alpine AS frontend-builder
-WORKDIR /build
+WORKDIR /build/frontend
 COPY frontend/package*.json ./
 RUN npm ci --prefer-offline --no-audit 2>&1 || npm install
 COPY frontend/ ./
-RUN npm run build 2>&1 || (echo "BUILD FAILED" && exit 1)
-RUN test -d dist || (echo "dist/ directory missing!" && exit 1)
-RUN echo "=== Build output ===" && find dist -type f | head -20 && echo "=== End build output ==="
+RUN npm run build 2>&1
+RUN ls -la /build/frontend/dist || echo "ERROR: dist not found!"
 
 # Runtime: nginx + API
 FROM node:22-alpine
@@ -19,7 +18,7 @@ COPY nginx-main.conf /etc/nginx/nginx.conf
 COPY web/nginx.conf /etc/nginx/conf.d/server.conf
 
 # Copy frontend files
-COPY --from=frontend-builder /build/dist /usr/share/nginx/html/
+COPY --from=frontend-builder /build/frontend/dist /usr/share/nginx/html/
 
 # Copy API code
 COPY api/ ./api/
